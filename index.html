@@ -452,24 +452,84 @@
             <div class="popular-feeds">
                 <h3>Popular Gaming Feeds</h3>
                 <div class="popular-feed-item">
-                    <span>IGN All</span>
-                    <button class="add-quick-btn" onclick="quickAdd('http://feeds.ign.com/ign/all', 'IGN All')">Add</button>
+                    <span>Kotaku</span>
+                    <button class="add-quick-btn" onclick="quickAdd('https://kotaku.com/rss', 'Kotaku')">Add</button>
                 </div>
                 <div class="popular-feed-item">
-                    <span>GameSpot</span>
-                    <button class="add-quick-btn" onclick="quickAdd('https://www.gamespot.com/feeds/mashup/', 'GameSpot')">Add</button>
+                    <span>Nintendo Life</span>
+                    <button class="add-quick-btn" onclick="quickAdd('http://www.nintendolife.com/feeds/latest', 'Nintendo Life')">Add</button>
                 </div>
                 <div class="popular-feed-item">
                     <span>Polygon</span>
                     <button class="add-quick-btn" onclick="quickAdd('https://www.polygon.com/rss/index.xml', 'Polygon')">Add</button>
                 </div>
                 <div class="popular-feed-item">
-                    <span>PC Gamer</span>
-                    <button class="add-quick-btn" onclick="quickAdd('https://www.pcgamer.com/rss/', 'PC Gamer')">Add</button>
+                    <span>Rock Paper Shotgun</span>
+                    <button class="add-quick-btn" onclick="quickAdd('https://www.rockpapershotgun.com/feed/', 'Rock Paper Shotgun')">Add</button>
                 </div>
                 <div class="popular-feed-item">
-                    <span>Kotaku</span>
-                    <button class="add-quick-btn" onclick="quickAdd('https://kotaku.com/rss', 'Kotaku')">Add</button>
+                    <span>VG247</span>
+                    <button class="add-quick-btn" onclick="quickAdd('https://www.vg247.com/feed/', 'VG247')">Add</button>
+                </div>
+                <div class="popular-feed-item">
+                    <span>GameSpot</span>
+                    <button class="add-quick-btn" onclick="quickAdd('https://www.gamespot.com/feeds/mashup/', 'GameSpot')">Add</button>
+                </div>
+                <div class="popular-feed-item">
+                    <span>Xbox Wire</span>
+                    <button class="add-quick-btn" onclick="quickAdd('https://news.xbox.com/en-us/feed/', 'Xbox Wire')">Add</button>
+                </div>
+                <div class="popular-feed-item">
+                    <span>Ars Technica Gaming</span>
+                    <button class="add-quick-btn" onclick="quickAdd('http://feeds.arstechnica.com/arstechnica/gaming/', 'Ars Technica Gaming')">Add</button>
+                </div>
+                <div class="popular-feed-item">
+                    <span>Game Informer</span>
+                    <button class="add-quick-btn" onclick="quickAdd('http://www.gameinformer.com/b/mainfeed.aspx?Tags=news', 'Game Informer')">Add</button>
+                </div>
+                <div class="popular-feed-item">
+                    <span>r/Gamers (Reddit)</span>
+                    <button class="add-quick-btn" onclick="quickAdd('https://www.reddit.com/r/gamers/.rss', 'r/Gamers')">Add</button>
+                </div>
+                <div class="popular-feed-item">
+                    <span>Push Square</span>
+                    <button class="add-quick-btn" onclick="quickAdd('http://www.pushsquare.com/feeds/latest', 'Push Square')">Add</button>
+                </div>
+                <div class="popular-feed-item">
+                    <span>My Nintendo News</span>
+                    <button class="add-quick-btn" onclick="quickAdd('https://mynintendonews.com/feed/', 'My Nintendo News')">Add</button>
+                </div>
+                <div class="popular-feed-item">
+                    <span>TouchArcade</span>
+                    <button class="add-quick-btn" onclick="quickAdd('https://toucharcade.com/feed/', 'TouchArcade')">Add</button>
+                </div>
+                <div class="popular-feed-item">
+                    <span>VideoGamer</span>
+                    <button class="add-quick-btn" onclick="quickAdd('https://www.videogamer.com/rss/allupdates.xml', 'VideoGamer')">Add</button>
+                </div>
+                <div class="popular-feed-item">
+                    <span>PCGamesN</span>
+                    <button class="add-quick-btn" onclick="quickAdd('https://www.pcgamesn.com/feed', 'PCGamesN')">Add</button>
+                </div>
+                <div class="popular-feed-item">
+                    <span>Operation Sports</span>
+                    <button class="add-quick-btn" onclick="quickAdd('https://www.operationsports.com/feed/', 'Operation Sports')">Add</button>
+                </div>
+                <div class="popular-feed-item">
+                    <span>Indie Games Plus</span>
+                    <button class="add-quick-btn" onclick="quickAdd('http://indiegamesplus.com/feed', 'Indie Games Plus')">Add</button>
+                </div>
+                <div class="popular-feed-item">
+                    <span>Steam Deck HQ</span>
+                    <button class="add-quick-btn" onclick="quickAdd('https://steamdeckhq.com/feed/', 'Steam Deck HQ')">Add</button>
+                </div>
+                <div class="popular-feed-item">
+                    <span>IGN All</span>
+                    <button class="add-quick-btn" onclick="quickAdd('http://feeds.ign.com/ign/all', 'IGN All')">Add</button>
+                </div>
+                <div class="popular-feed-item">
+                    <span>PC Gamer</span>
+                    <button class="add-quick-btn" onclick="quickAdd('https://www.pcgamer.com/rss/', 'PC Gamer')">Add</button>
                 </div>
             </div>
         </div>
@@ -512,17 +572,7 @@
                 <div class="modal-meta">
                     ${article.source} • ${formatDate(article.date)}
                 </div>
-            `;
-
-            if (!hasFullContent) {
-                contentHtml += `
-                    <div class="content-warning">
-                        ⚠️ This feed only provides a summary. Click "Read Full Article" below for the complete story.
-                    </div>
-                `;
-            }
-
-            contentHtml += `<div>${article.content}</div>`;
+                <div>${article.content}</div>`;
             contentHtml += `<a href="${article.link}" target="_blank" class="open-original">Read Full Article on ${article.source}</a>`;
 
             modalBody.innerHTML = contentHtml;
@@ -823,8 +873,12 @@
         // Initialize
         if (feeds.length === 0) {
             feeds = [
-                { url: 'http://feeds.ign.com/ign/all', name: 'IGN All' },
-                { url: 'https://www.polygon.com/rss/index.xml', name: 'Polygon' }
+                { url: 'https://kotaku.com/rss', name: 'Kotaku' },
+                { url: 'https://www.polygon.com/rss/index.xml', name: 'Polygon' },
+                { url: 'https://www.rockpapershotgun.com/feed/', name: 'Rock Paper Shotgun' },
+                { url: 'https://www.vg247.com/feed/', name: 'VG247' },
+                { url: 'https://www.gamespot.com/feeds/mashup/', name: 'GameSpot' },
+                { url: 'http://feeds.ign.com/ign/all', name: 'IGN All' }
             ];
             localStorage.setItem('rssFeeds', JSON.stringify(feeds));
         }
