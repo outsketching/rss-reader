@@ -1,8 +1,8 @@
 // Service Worker for PWA
 const CACHE_NAME = 'rss-reader-v1';
 const urlsToCache = [
-  '/rss-reader/',
-  '/rss-reader/index.html'
+  './',
+  './index.html'
 ];
 
 // Install event - cache files
@@ -10,6 +10,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(urlsToCache))
+      .catch(err => console.log('Cache failed:', err))
   );
   self.skipWaiting();
 });
@@ -32,8 +33,19 @@ self.addEventListener('activate', event => {
 
 // Fetch event - network first, fall back to cache
 self.addEventListener('fetch', event => {
-  event.respondWith(
-    fetch(event.request)
-      .catch(() => caches.match(event.request))
-  );
+  // Only cache same-origin requests
+  if (event.request.url.startsWith(self.location.origin)) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          // Clone and cache the response
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then(cache => {
+            cache.put(event.request, responseClone);
+          });
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+  }
 });
