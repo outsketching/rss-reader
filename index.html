@@ -312,6 +312,100 @@
             background: #3498db;
             color: white;
         }
+
+        .article-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 2000;
+            overflow-y: auto;
+        }
+
+        .article-modal.show {
+            display: block;
+        }
+
+        .modal-content {
+            background: white;
+            max-width: 800px;
+            margin: 20px auto;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            background: #2c3e50;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+        }
+
+        .modal-body {
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .modal-body h1 {
+            font-size: 24px;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .modal-body img {
+            max-width: 100%;
+            height: auto;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+
+        .modal-body p {
+            margin-bottom: 15px;
+            color: #34495e;
+        }
+
+        .modal-meta {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .open-original {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            margin-top: 20px;
+        }
+
+        .content-warning {
+            background: #f39c12;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -381,18 +475,64 @@
         </div>
     </div>
 
+    <div id="articleModal" class="article-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 style="font-size: 16px; margin: 0;">Article</h2>
+                <button class="close-modal" onclick="closeArticle()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
     <script>
         let WORKER_URL = localStorage.getItem('workerUrl') || '';
         let feeds = JSON.parse(localStorage.getItem('rssFeeds') || '[]');
         let articles = [];
         let readArticles = JSON.parse(localStorage.getItem('readArticles') || '[]');
         let currentFilter = 'unread';
+        let articleData = {}; // Store full article content
 
         function setFilter(filter) {
             currentFilter = filter;
             document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
             renderArticles();
+        }
+
+        function openArticle(link) {
+            const article = articleData[link];
+            if (!article) return;
+
+            const modalBody = document.getElementById('modalBody');
+            const hasFullContent = article.content && article.content.length > 200;
+
+            let contentHtml = `
+                <h1>${article.title}</h1>
+                <div class="modal-meta">
+                    ${article.source} • ${formatDate(article.date)}
+                </div>
+            `;
+
+            if (!hasFullContent) {
+                contentHtml += `
+                    <div class="content-warning">
+                        ⚠️ This feed only provides a summary. Click "Read Full Article" below for the complete story.
+                    </div>
+                `;
+            }
+
+            contentHtml += `<div>${article.content}</div>`;
+            contentHtml += `<a href="${article.link}" target="_blank" class="open-original">Read Full Article on ${article.source}</a>`;
+
+            modalBody.innerHTML = contentHtml;
+            document.getElementById('articleModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeArticle() {
+            document.getElementById('articleModal').classList.remove('show');
+            document.body.style.overflow = 'auto';
         }
 
         function markTodayAsRead() {
@@ -536,18 +676,52 @@
                         const pubDate = item.querySelector('pubDate, published')?.textContent || '';
                         
                         let image = '';
-                        const mediaContent = item.querySelector('[url]');
-                        const enclosure = item.querySelector('enclosure[type^="image"]');
-                        const description = item.querySelector('description, summary')?.textContent || '';
                         
+                        // Try multiple ways to find an image
+                        // 1. Media content/thumbnail
+                        const mediaContent = item.querySelector('[url]');
                         if (mediaContent && mediaContent.getAttribute('url')) {
                             image = mediaContent.getAttribute('url');
-                        } else if (enclosure) {
-                            image = enclosure.getAttribute('url');
-                        } else {
-                            const imgMatch = description.match(/<img[^>]+src=["']([^"']+)["']/);
-                            if (imgMatch) image = imgMatch[1];
                         }
+                        
+                        // 2. Enclosure
+                        if (!image) {
+                            const enclosure = item.querySelector('enclosure[type^="image"]');
+                            if (enclosure) {
+                                image = enclosure.getAttribute('url');
+                            }
+                        }
+                        
+                        // 3. Look in description/content for images
+                        if (!image) {
+                            const description = item.querySelector('description, summary, content, content\\:encoded')?.textContent || '';
+                            const imgMatches = description.matchAll(/<img[^>]+src=["']([^"']+)["']/g);
+                            
+                            // Get all image URLs from the content
+                            const imageUrls = Array.from(imgMatches).map(match => match[1]);
+                            
+                            // Filter out common tracking pixels, icons, and small images
+                            const validImages = imageUrls.filter(url => {
+                                const lower = url.toLowerCase();
+                                return !lower.includes('1x1') && 
+                                       !lower.includes('tracking') && 
+                                       !lower.includes('pixel') &&
+                                       !lower.includes('icon') &&
+                                       !lower.includes('logo') &&
+                                       !lower.includes('sprite') &&
+                                       !lower.match(/\d+x\d+/) || lower.match(/\d{3,}x\d{3,}/); // Allow large dimensions only
+                            });
+                            
+                            // Use the first valid image found
+                            if (validImages.length > 0) {
+                                image = validImages[0];
+                            }
+                        }
+
+                        // Get article content
+                        const contentEncoded = item.querySelector('content\\:encoded, content')?.textContent || '';
+                        const description = item.querySelector('description, summary')?.textContent || '';
+                        const content = contentEncoded || description;
 
                         articles.push({
                             title,
@@ -556,6 +730,15 @@
                             source: feed.name,
                             date: new Date(pubDate || Date.now())
                         });
+
+                        // Store full article data
+                        articleData[link] = {
+                            title,
+                            link,
+                            content,
+                            source: feed.name,
+                            date: new Date(pubDate || Date.now())
+                        };
                     });
                 } catch (e) {
                     console.error('Error loading feed:', feed.url, e);
@@ -603,7 +786,7 @@
             container.innerHTML = filteredArticles.map(article => {
                 const isRead = readArticles.includes(article.link);
                 return `
-                <div class="article ${isRead ? 'read-article' : ''}" onclick="window.open('${article.link}', '_blank')">
+                <div class="article ${isRead ? 'read-article' : ''}" onclick="openArticle('${article.link}')">
                     ${article.image ? `<img src="${article.image}" class="article-image" alt="${article.title}">` : ''}
                     <div class="article-content">
                         <div class="article-title">${article.title}</div>
