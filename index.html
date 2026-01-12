@@ -43,6 +43,7 @@
         }
 
         .tab {
+            flex: 1;
             padding: 8px 16px;
             background: rgba(255,255,255,0.1);
             border: none;
@@ -260,62 +261,9 @@
             margin-bottom: 15px;
         }
 
-        .mark-read-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 15px 25px;
-            background: #27ae60;
-            color: white;
-            border: none;
-            border-radius: 50px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            z-index: 1000;
-            display: none;
-        }
-
-        .mark-read-btn.show {
-            display: block;
-        }
-
-        .unread-count {
-            background: #e74c3c;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
+        #unreadBadge {
             font-size: 12px;
-            margin-left: 8px;
-        }
-
-        .read-article {
-            opacity: 0.5;
-        }
-
-        .filter-controls {
-            padding: 10px 15px;
-            background: white;
-            margin: 0 15px 15px 15px;
-            border-radius: 8px;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .filter-btn {
-            padding: 8px 16px;
-            background: #ecf0f1;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .filter-btn.active {
-            background: #3498db;
-            color: white;
+            margin-left: 5px;
         }
 
         .article-modal {
@@ -433,23 +381,22 @@
     <div class="header">
         <h1>📰 RSS Reader</h1>
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('feed')">Feed</button>
+            <button class="tab active" onclick="switchTab('unread')">New <span id="unreadBadge"></span></button>
+            <button class="tab" onclick="switchTab('all')">All</button>
             <button class="tab" onclick="switchTab('manage')">Manage</button>
         </div>
     </div>
 
-    <div id="feedView" class="view active">
-        <div class="filter-controls">
-            <button class="filter-btn active" onclick="setFilter('unread')">Unread</button>
-            <button class="filter-btn" onclick="setFilter('all')">All</button>
-            <button class="filter-btn" onclick="setFilter('today')">Today</button>
-        </div>
-        <div class="feed-container" id="feedContainer">
+    <div id="unreadView" class="view active">
+        <div class="feed-container" id="unreadContainer">
             <div class="loading">Loading articles...</div>
         </div>
-        <button class="mark-read-btn" id="markReadBtn" onclick="markTodayAsRead()">
-            ✓ Mark Today as Read <span class="unread-count" id="unreadCount">0</span>
-        </button>
+    </div>
+
+    <div id="allView" class="view">
+        <div class="feed-container" id="allContainer">
+            <div class="loading">Loading articles...</div>
+        </div>
     </div>
 
     <div id="manageView" class="view">
@@ -571,8 +518,9 @@
         let feeds = JSON.parse(localStorage.getItem('rssFeeds') || '[]');
         let articles = [];
         let readArticles = JSON.parse(localStorage.getItem('readArticles') || '[]');
-        let currentFilter = 'unread';
+        let currentTab = 'unread';
         let articleData = {}; // Store full article content
+        let observer = null; // Intersection Observer for auto-marking as read
 
         function setFilter(filter) {
             currentFilter = filter;
@@ -873,47 +821,45 @@
             }
 
             articles.sort((a, b) => b.date - a.date);
-            renderArticles();
+            renderArticles('unread');
+            updateUnreadBadge();
         }
 
-        function renderArticles() {
-            const container = document.getElementById('feedContainer');
+        function renderArticles(view) {
+            const container = view === 'unread' ? 
+                document.getElementById('unreadContainer') : 
+                document.getElementById('allContainer');
             
             if (articles.length === 0) {
                 container.innerHTML = '<div class="empty-state"><p>No articles found. Check your worker URL in Manage tab.</p></div>';
-                document.getElementById('markReadBtn').classList.remove('show');
                 return;
             }
 
             let filteredArticles = articles;
-            const today = new Date().toDateString();
+            const now = Date.now();
+            const last72Hours = 72 * 60 * 60 * 1000;
 
-            if (currentFilter === 'unread') {
-                filteredArticles = articles.filter(a => !readArticles.includes(a.link));
-            } else if (currentFilter === 'today') {
-                filteredArticles = articles.filter(a => a.date.toDateString() === today);
-            }
-
-            const unreadToday = articles.filter(a => 
-                a.date.toDateString() === today && !readArticles.includes(a.link)
-            ).length;
-
-            if (unreadToday > 0) {
-                document.getElementById('markReadBtn').classList.add('show');
-                document.getElementById('unreadCount').textContent = unreadToday;
-            } else {
-                document.getElementById('markReadBtn').classList.remove('show');
+            if (view === 'unread') {
+                // Show only unread articles from last 72 hours
+                filteredArticles = articles.filter(a => {
+                    const age = now - a.date.getTime();
+                    const isRecent = age < last72Hours;
+                    const isUnread = !readArticles.includes(a.link);
+                    return isRecent && isUnread;
+                });
             }
 
             if (filteredArticles.length === 0) {
-                container.innerHTML = '<div class="empty-state"><p>No articles in this view. Try a different filter!</p></div>';
+                container.innerHTML = view === 'unread' ? 
+                    '<div class="empty-state"><h2>All caught up! 🎉</h2><p>No new articles in the last 72 hours</p></div>' :
+                    '<div class="empty-state"><p>No articles found</p></div>';
                 return;
             }
 
             container.innerHTML = filteredArticles.map(article => {
                 const isRead = readArticles.includes(article.link);
                 return `
-                <div class="article ${isRead ? 'read-article' : ''}" onclick="openArticle('${article.link}')">
+                <div class="article ${isRead ? 'read-article' : ''}" data-link="${article.link}" onclick="openArticle('${article.link}')">
                     ${article.image ? `<img src="${article.image}" class="article-image" alt="${article.title}">` : ''}
                     <div class="article-content">
                         <div class="article-title">${article.title}</div>
@@ -924,6 +870,11 @@
                     </div>
                 </div>
             `}).join('');
+
+            // Set up scroll observer for unread view
+            if (view === 'unread') {
+                setTimeout(() => setupScrollObserver(), 100);
+            }
         }
 
         function formatDate(date) {
@@ -963,6 +914,8 @@
         if (WORKER_URL) {
             document.getElementById('workerSetup').style.display = 'none';
             loadAllFeeds();
+        } else {
+            renderArticles('unread');
         }
 
         document.getElementById('workerUrlInput').value = WORKER_URL;
