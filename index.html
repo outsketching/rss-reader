@@ -634,7 +634,15 @@
             WORKER_URL = url;
             localStorage.setItem('workerUrl', url);
             document.getElementById('workerSetup').style.display = 'none';
-            showError('✓ Worker URL saved! Try loading feeds now.', '#27ae60');
+            showError('✓ Worker URL saved! Loading feeds...', '#27ae60');
+            
+            // Switch to unread tab and load feeds
+            currentTab = 'unread';
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelector('.tab').classList.add('active');
+            document.getElementById('unreadView').classList.add('active');
+            
             loadAllFeeds();
         }
 
@@ -711,34 +719,53 @@
         }
 
         async function loadAllFeeds() {
-            const container = document.getElementById('feedContainer');
+            const unreadContainer = document.getElementById('unreadContainer');
+            const allContainer = document.getElementById('allContainer');
             
             if (!WORKER_URL) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <h2>Setup Required</h2>
-                        <p>Go to the Manage tab and enter your Cloudflare Worker URL</p>
-                    </div>
-                `;
+                if (unreadContainer) {
+                    unreadContainer.innerHTML = `
+                        <div class="empty-state">
+                            <h2>Setup Required</h2>
+                            <p>Go to the Manage tab and enter your Cloudflare Worker URL</p>
+                        </div>
+                    `;
+                }
                 return;
             }
 
             if (feeds.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <h2>No feeds yet!</h2>
-                        <p>Go to the Manage tab to add some RSS feeds</p>
-                    </div>
-                `;
+                if (unreadContainer) {
+                    unreadContainer.innerHTML = `
+                        <div class="empty-state">
+                            <h2>No feeds yet!</h2>
+                            <p>Go to the Manage tab to add some RSS feeds</p>
+                        </div>
+                    `;
+                }
                 return;
             }
 
-            container.innerHTML = '<div class="loading">Loading articles...</div>';
+            if (unreadContainer) {
+                unreadContainer.innerHTML = '<div class="loading">Loading articles...</div>';
+            }
+            if (allContainer) {
+                allContainer.innerHTML = '<div class="loading">Loading articles...</div>';
+            }
+            
             articles = [];
+            let successCount = 0;
 
             for (const feed of feeds) {
                 try {
+                    console.log('Fetching feed:', feed.url);
                     const response = await fetch(`${WORKER_URL}?url=${encodeURIComponent(feed.url)}`);
+                    
+                    if (!response.ok) {
+                        console.error('Response not OK:', response.status, response.statusText);
+                        continue;
+                    }
+                    
                     const text = await response.text();
                     const parser = new DOMParser();
                     const xml = parser.parseFromString(text, 'text/xml');
@@ -815,13 +842,38 @@
                             date: new Date(pubDate || Date.now())
                         };
                     });
+                    successCount++;
                 } catch (e) {
                     console.error('Error loading feed:', feed.url, e);
                 }
             }
 
+            if (successCount === 0 && feeds.length > 0) {
+                const unreadContainer = document.getElementById('unreadContainer');
+                const allContainer = document.getElementById('allContainer');
+                
+                if (unreadContainer) {
+                    unreadContainer.innerHTML = `
+                        <div class="empty-state">
+                            <h2>Unable to load feeds</h2>
+                            <p>There may be network issues. Pull down to refresh or try again later.</p>
+                        </div>
+                    `;
+                }
+                if (allContainer) {
+                    allContainer.innerHTML = `
+                        <div class="empty-state">
+                            <h2>Unable to load feeds</h2>
+                            <p>There may be network issues. Pull down to refresh or try again later.</p>
+                        </div>
+                    `;
+                }
+                return;
+            }
+
             articles.sort((a, b) => b.date - a.date);
             renderArticles('unread');
+            renderArticles('all');
             updateUnreadBadge();
         }
 
