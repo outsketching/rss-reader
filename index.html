@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2c3e50">
+    <meta name="description" content="Your personal RSS feed reader for gaming news">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <title>RSS Feed Reader</title>
     <style>
         * {
@@ -889,6 +893,13 @@
         }
 
         document.getElementById('workerUrlInput').value = WORKER_URL;
+
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => {
+                // Service worker registration failed, continue anyway
+            });
+        }
     </script>
 </body>
 </html>
