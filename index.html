@@ -254,6 +254,64 @@
             cursor: pointer;
             margin-bottom: 15px;
         }
+
+        .mark-read-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+            display: none;
+        }
+
+        .mark-read-btn.show {
+            display: block;
+        }
+
+        .unread-count {
+            background: #e74c3c;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+
+        .read-article {
+            opacity: 0.5;
+        }
+
+        .filter-controls {
+            padding: 10px 15px;
+            background: white;
+            margin: 0 15px 15px 15px;
+            border-radius: 8px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background: #ecf0f1;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .filter-btn.active {
+            background: #3498db;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -266,9 +324,17 @@
     </div>
 
     <div id="feedView" class="view active">
+        <div class="filter-controls">
+            <button class="filter-btn active" onclick="setFilter('unread')">Unread</button>
+            <button class="filter-btn" onclick="setFilter('all')">All</button>
+            <button class="filter-btn" onclick="setFilter('today')">Today</button>
+        </div>
         <div class="feed-container" id="feedContainer">
             <div class="loading">Loading articles...</div>
         </div>
+        <button class="mark-read-btn" id="markReadBtn" onclick="markTodayAsRead()">
+            ✓ Mark Today as Read <span class="unread-count" id="unreadCount">0</span>
+        </button>
     </div>
 
     <div id="manageView" class="view">
@@ -319,6 +385,30 @@
         let WORKER_URL = localStorage.getItem('workerUrl') || '';
         let feeds = JSON.parse(localStorage.getItem('rssFeeds') || '[]');
         let articles = [];
+        let readArticles = JSON.parse(localStorage.getItem('readArticles') || '[]');
+        let currentFilter = 'unread';
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderArticles();
+        }
+
+        function markTodayAsRead() {
+            const today = new Date().toDateString();
+            const todayArticles = articles.filter(a => a.date.toDateString() === today);
+            
+            todayArticles.forEach(article => {
+                if (!readArticles.includes(article.link)) {
+                    readArticles.push(article.link);
+                }
+            });
+            
+            localStorage.setItem('readArticles', JSON.stringify(readArticles));
+            showError(`✓ Marked ${todayArticles.length} articles as read`, '#27ae60');
+            renderArticles();
+        }
 
         function saveWorkerUrl() {
             const url = document.getElementById('workerUrlInput').value.trim();
@@ -481,11 +571,39 @@
             
             if (articles.length === 0) {
                 container.innerHTML = '<div class="empty-state"><p>No articles found. Check your worker URL in Manage tab.</p></div>';
+                document.getElementById('markReadBtn').classList.remove('show');
                 return;
             }
 
-            container.innerHTML = articles.map(article => `
-                <div class="article" onclick="window.open('${article.link}', '_blank')">
+            let filteredArticles = articles;
+            const today = new Date().toDateString();
+
+            if (currentFilter === 'unread') {
+                filteredArticles = articles.filter(a => !readArticles.includes(a.link));
+            } else if (currentFilter === 'today') {
+                filteredArticles = articles.filter(a => a.date.toDateString() === today);
+            }
+
+            const unreadToday = articles.filter(a => 
+                a.date.toDateString() === today && !readArticles.includes(a.link)
+            ).length;
+
+            if (unreadToday > 0) {
+                document.getElementById('markReadBtn').classList.add('show');
+                document.getElementById('unreadCount').textContent = unreadToday;
+            } else {
+                document.getElementById('markReadBtn').classList.remove('show');
+            }
+
+            if (filteredArticles.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No articles in this view. Try a different filter!</p></div>';
+                return;
+            }
+
+            container.innerHTML = filteredArticles.map(article => {
+                const isRead = readArticles.includes(article.link);
+                return `
+                <div class="article ${isRead ? 'read-article' : ''}" onclick="window.open('${article.link}', '_blank')">
                     ${article.image ? `<img src="${article.image}" class="article-image" alt="${article.title}">` : ''}
                     <div class="article-content">
                         <div class="article-title">${article.title}</div>
@@ -495,7 +613,7 @@
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         function formatDate(date) {
