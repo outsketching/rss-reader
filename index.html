@@ -7,6 +7,7 @@
     <meta name="description" content="Your personal RSS feed reader for gaming news">
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="icon-192.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/readability/0.4.4/Readability.min.js"></script>
     <title>RSS Feed Reader</title>
     <style>
         * {
@@ -403,12 +404,28 @@
         }
 
         .content-warning {
-            background: #f39c12;
+            background: #3498db;
             color: white;
             padding: 10px;
             border-radius: 5px;
             margin-bottom: 15px;
             font-size: 14px;
+            text-align: center;
+        }
+
+        .loading-article {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+
+        .extraction-failed {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: center;
         }
     </style>
 </head>
@@ -569,19 +586,75 @@
             if (!article) return;
 
             const modalBody = document.getElementById('modalBody');
-            const hasFullContent = article.content && article.content.length > 200;
-
-            let contentHtml = `
+            
+            // Show loading state
+            modalBody.innerHTML = `
                 <h1>${article.title}</h1>
                 <div class="modal-meta">
                     ${article.source} • ${formatDate(article.date)}
                 </div>
-                <div>${article.content}</div>`;
-            contentHtml += `<a href="${article.link}" target="_blank" class="open-original">Read Full Article on ${article.source}</a>`;
-
-            modalBody.innerHTML = contentHtml;
+                <div class="content-warning">
+                    📄 Extracting full article content...
+                </div>
+                <div class="loading-article">Please wait while we fetch the full article...</div>
+            `;
+            
             document.getElementById('articleModal').classList.add('show');
             document.body.style.overflow = 'hidden';
+
+            // Fetch and extract full article
+            extractArticle(article);
+        }
+
+        async function extractArticle(article) {
+            const modalBody = document.getElementById('modalBody');
+            
+            try {
+                // Fetch the full article page through the worker
+                const response = await fetch(`${WORKER_URL}?url=${encodeURIComponent(article.link)}`);
+                const html = await response.text();
+                
+                // Parse the HTML
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Use Readability to extract article content
+                const reader = new Readability(doc);
+                const extractedArticle = reader.parse();
+                
+                if (extractedArticle && extractedArticle.content) {
+                    // Successfully extracted
+                    modalBody.innerHTML = `
+                        <h1>${extractedArticle.title || article.title}</h1>
+                        <div class="modal-meta">
+                            ${article.source} • ${formatDate(article.date)}
+                        </div>
+                        <div class="content-warning">
+                            ✓ Full article extracted successfully
+                        </div>
+                        <div>${extractedArticle.content}</div>
+                        <a href="${article.link}" target="_blank" class="open-original">Read on ${article.source}</a>
+                    `;
+                } else {
+                    // Extraction failed, show RSS content
+                    throw new Error('Could not extract article');
+                }
+            } catch (error) {
+                console.error('Article extraction failed:', error);
+                
+                // Fall back to RSS content
+                modalBody.innerHTML = `
+                    <h1>${article.title}</h1>
+                    <div class="modal-meta">
+                        ${article.source} • ${formatDate(article.date)}
+                    </div>
+                    <div class="extraction-failed">
+                        ⚠️ Could not extract full article. This site may block content extraction or require login.
+                    </div>
+                    <div>${article.content}</div>
+                    <a href="${article.link}" target="_blank" class="open-original">Read Full Article on ${article.source}</a>
+                `;
+            }
         }
 
         function closeArticle() {
