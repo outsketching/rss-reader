@@ -10,371 +10,55 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/readability/0.4.4/Readability.min.js"></script>
     <title>RSS Feed Reader</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #f5f5f5;
-            padding-bottom: 70px;
-        }
-
-        .header {
-            background: #2c3e50;
-            color: white;
-            padding: 15px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .header h1 {
-            font-size: 20px;
-            margin-bottom: 10px;
-        }
-
-        .tabs {
-            display: flex;
-            gap: 10px;
-        }
-
-        .tab {
-            flex: 1;
-            padding: 8px 16px;
-            background: rgba(255,255,255,0.1);
-            border: none;
-            color: white;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .tab.active {
-            background: #3498db;
-        }
-
-        .view {
-            display: none;
-        }
-
-        .view.active {
-            display: block;
-        }
-
-        .feed-container {
-            padding: 15px;
-        }
-
-        .article {
-            background: white;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-
-        .article:active {
-            transform: scale(0.98);
-        }
-
-        .article-image {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            background: #e0e0e0;
-        }
-
-        .article-content {
-            padding: 15px;
-        }
-
-        .article-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: #2c3e50;
-            line-height: 1.4;
-        }
-
-        .article-meta {
-            font-size: 12px;
-            color: #7f8c8d;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .feed-source {
-            font-weight: 600;
-            color: #3498db;
-        }
-
-        .manage-container {
-            padding: 15px;
-        }
-
-        .search-box {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-            margin-bottom: 15px;
-        }
-
-        .add-feed-btn {
-            width: 100%;
-            padding: 12px;
-            background: #3498db;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-bottom: 20px;
-        }
-
-        .subscription-list {
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .subscription-item {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .subscription-item:last-child {
-            border-bottom: none;
-        }
-
-        .subscription-name {
-            font-weight: 600;
-            color: #2c3e50;
-        }
-
-        .remove-btn {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #7f8c8d;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #7f8c8d;
-        }
-
-        .empty-state h2 {
-            margin-bottom: 10px;
-            color: #95a5a6;
-        }
-
-        .popular-feeds {
-            margin-top: 20px;
-        }
-
-        .popular-feeds h3 {
-            margin-bottom: 10px;
-            color: #2c3e50;
-        }
-
-        .popular-feed-item {
-            background: white;
-            padding: 12px;
-            margin-bottom: 8px;
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .add-quick-btn {
-            background: #27ae60;
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        .error {
-            background: #e74c3c;
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-        }
-
-        .setup-notice {
-            background: #f39c12;
-            color: white;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 15px;
-            line-height: 1.6;
-        }
-
-        .setup-notice a {
-            color: white;
-            text-decoration: underline;
-        }
-
-        .worker-url-input {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #3498db;
-            border-radius: 5px;
-            font-size: 14px;
-            margin: 10px 0;
-        }
-
-        .save-worker-btn {
-            width: 100%;
-            padding: 10px;
-            background: #27ae60;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-bottom: 15px;
-        }
-
-        #unreadBadge {
-            font-size: 12px;
-            margin-left: 5px;
-        }
-
-        .article-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.9);
-            z-index: 2000;
-            overflow-y: auto;
-        }
-
-        .article-modal.show {
-            display: block;
-        }
-
-        .modal-content {
-            background: white;
-            max-width: 800px;
-            margin: 20px auto;
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .modal-header {
-            background: #2c3e50;
-            color: white;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .close-modal {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 28px;
-            cursor: pointer;
-            padding: 0;
-            width: 40px;
-            height: 40px;
-        }
-
-        .modal-body {
-            padding: 20px;
-            line-height: 1.6;
-        }
-
-        .modal-body h1 {
-            font-size: 24px;
-            margin-bottom: 15px;
-            color: #2c3e50;
-        }
-
-        .modal-body img {
-            max-width: 100%;
-            height: auto;
-            margin: 15px 0;
-            border-radius: 5px;
-        }
-
-        .modal-body p {
-            margin-bottom: 15px;
-            color: #34495e;
-        }
-
-        .modal-meta {
-            color: #7f8c8d;
-            font-size: 14px;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid #ecf0f1;
-        }
-
-        .open-original {
-            display: inline-block;
-            background: #3498db;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            text-decoration: none;
-            margin-top: 20px;
-        }
-
-        .content-warning {
-            background: #3498db;
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 15px;
-            font-size: 14px;
-            text-align: center;
-        }
-
-        .loading-article {
-            text-align: center;
-            padding: 40px;
-            color: #7f8c8d;
-        }
-
-        .extraction-failed {
-            background: #e74c3c;
-            color: white;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 20px 0;
-            text-align: center;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding-bottom: 70px; }
+        .header { background: #2c3e50; color: white; padding: 15px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header h1 { font-size: 20px; margin-bottom: 10px; }
+        .tabs { display: flex; gap: 10px; }
+        .tab { flex: 1; padding: 8px 16px; background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 5px; cursor: pointer; font-size: 14px; }
+        .tab.active { background: #3498db; }
+        .view { display: none; }
+        .view.active { display: block; }
+        .feed-container { padding: 15px; }
+        .article { background: white; border-radius: 8px; margin-bottom: 15px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s, opacity 0.3s; }
+        .article:active { transform: scale(0.98); }
+        .article-image { width: 100%; height: 200px; object-fit: cover; background: #e0e0e0; }
+        .article-content { padding: 15px; }
+        .article-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #2c3e50; line-height: 1.4; }
+        .article-meta { font-size: 12px; color: #7f8c8d; display: flex; justify-content: space-between; align-items: center; }
+        .feed-source { font-weight: 600; color: #3498db; }
+        .manage-container { padding: 15px; }
+        .search-box, .worker-url-input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; margin-bottom: 15px; }
+        .add-feed-btn, .save-worker-btn { width: 100%; padding: 12px; background: #3498db; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; margin-bottom: 20px; }
+        .save-worker-btn { background: #27ae60; padding: 10px; }
+        .subscription-list { background: white; border-radius: 8px; overflow: hidden; }
+        .subscription-item { padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .subscription-item:last-child { border-bottom: none; }
+        .subscription-name { font-weight: 600; color: #2c3e50; }
+        .remove-btn { background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .loading, .empty-state { text-align: center; padding: 40px; color: #7f8c8d; }
+        .empty-state h2 { margin-bottom: 10px; color: #95a5a6; }
+        .popular-feeds { margin-top: 20px; }
+        .popular-feeds h3 { margin-bottom: 10px; color: #2c3e50; }
+        .popular-feed-item { background: white; padding: 12px; margin-bottom: 8px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+        .add-quick-btn { background: #27ae60; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .error { background: #e74c3c; color: white; padding: 10px; border-radius: 5px; margin-bottom: 15px; }
+        .setup-notice { background: #f39c12; color: white; padding: 15px; border-radius: 5px; margin: 15px; line-height: 1.6; }
+        #unreadBadge { font-size: 12px; margin-left: 5px; }
+        .article-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 2000; overflow-y: auto; }
+        .article-modal.show { display: block; }
+        .modal-content { background: white; max-width: 800px; margin: 20px auto; border-radius: 8px; overflow: hidden; }
+        .modal-header { background: #2c3e50; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .close-modal { background: none; border: none; color: white; font-size: 28px; cursor: pointer; padding: 0; width: 40px; height: 40px; }
+        .modal-body { padding: 20px; line-height: 1.6; }
+        .modal-body h1 { font-size: 24px; margin-bottom: 15px; color: #2c3e50; }
+        .modal-body img { max-width: 100%; height: auto; margin: 15px 0; border-radius: 5px; }
+        .modal-body p { margin-bottom: 15px; color: #34495e; }
+        .modal-meta { color: #7f8c8d; font-size: 14px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #ecf0f1; }
+        .open-original { display: inline-block; background: #3498db; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; margin-top: 20px; }
+        .content-warning { background: #3498db; color: white; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 14px; text-align: center; }
+        .loading-article { text-align: center; padding: 40px; color: #7f8c8d; }
+        .extraction-failed { background: #e74c3c; color: white; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center; }
     </style>
 </head>
 <body>
@@ -388,15 +72,11 @@
     </div>
 
     <div id="unreadView" class="view active">
-        <div class="feed-container" id="unreadContainer">
-            <div class="loading">Loading articles...</div>
-        </div>
+        <div class="feed-container" id="unreadContainer"><div class="loading">Loading articles...</div></div>
     </div>
 
     <div id="allView" class="view">
-        <div class="feed-container" id="allContainer">
-            <div class="loading">Loading articles...</div>
-        </div>
+        <div class="feed-container" id="allContainer"><div class="loading">Loading articles...</div></div>
     </div>
 
     <div id="manageView" class="view">
@@ -404,85 +84,330 @@
             <div id="workerSetup" class="setup-notice">
                 <strong>⚙️ Setup Required:</strong><br>
                 Enter your Cloudflare Worker URL below (ends in .workers.dev)
-                <input type="text" id="workerUrlInput" class="worker-url-input" 
-                       placeholder="https://your-worker.workers.dev">
+                <input type="text" id="workerUrlInput" class="worker-url-input" placeholder="https://your-worker.workers.dev">
                 <button class="save-worker-btn" onclick="saveWorkerUrl()">Save Worker URL</button>
             </div>
-
             <input type="text" id="feedUrl" class="search-box" placeholder="Enter RSS feed URL">
             <button class="add-feed-btn" onclick="addFeed()">Add Feed</button>
-            
             <div id="errorMsg" style="display: none;" class="error"></div>
-            
             <h3 style="margin-bottom: 10px; color: #2c3e50;">Your Subscriptions</h3>
             <div class="subscription-list" id="subscriptionList"></div>
-
             <div class="popular-feeds">
                 <h3>Popular Gaming Feeds</h3>
-                <div class="popular-feed-item">
-                    <span>Kotaku</span>
-                    <button class="add-quick-btn" onclick="quickAdd('https://kotaku.com/rss', 'Kotaku')">Add</button>
+                <div class="popular-feed-item"><span>Kotaku</span><button class="add-quick-btn" onclick="quickAdd('https://kotaku.com/rss', 'Kotaku')">Add</button></div>
+                <div class="popular-feed-item"><span>Polygon</span><button class="add-quick-btn" onclick="quickAdd('https://www.polygon.com/rss/index.xml', 'Polygon')">Add</button></div>
+                <div class="popular-feed-item"><span>Rock Paper Shotgun</span><button class="add-quick-btn" onclick="quickAdd('https://www.rockpapershotgun.com/feed/', 'Rock Paper Shotgun')">Add</button></div>
+                <div class="popular-feed-item"><span>Steam Deck HQ</span><button class="add-quick-btn" onclick="quickAdd('https://steamdeckhq.com/feed/', 'Steam Deck HQ')">Add</button></div>
+                <div class="popular-feed-item"><span>IGN All</span><button class="add-quick-btn" onclick="quickAdd('http://feeds.ign.com/ign/all', 'IGN All')">Add</button></div>
+                <div class="popular-feed-item"><span>PC Gamer</span><button class="add-quick-btn" onclick="quickAdd('https://www.pcgamer.com/rss/', 'PC Gamer')">Add</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="articleModal" class="article-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 style="font-size: 16px; margin: 0;">Article</h2>
+                <button class="close-modal" onclick="closeArticle()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        let WORKER_URL = localStorage.getItem('workerUrl') || '';
+        let feeds = JSON.parse(localStorage.getItem('rssFeeds') || '[]');
+        let articles = [];
+        let readArticles = JSON.parse(localStorage.getItem('readArticles') || '[]');
+        let currentTab = 'unread';
+        let articleData = {};
+        let observer = null;
+
+        function formatDate(date) {
+            if (!date || isNaN(date)) return '';
+            const now = new Date();
+            const diff = now - date;
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+            if (hours < 1) return 'Just now';
+            if (hours < 24) return `${hours}h ago`;
+            if (days < 7) return `${days}d ago`;
+            return date.toLocaleDateString();
+        }
+
+        function showError(msg, color = '#e74c3c') {
+            const errorDiv = document.getElementById('errorMsg');
+            if (errorDiv) {
+                errorDiv.textContent = msg;
+                errorDiv.style.display = 'block';
+                errorDiv.style.background = color;
+                setTimeout(() => errorDiv.style.display = 'none', 3000);
+            }
+        }
+
+        function updateUnreadBadge() {
+            const unreadCount = articles.filter(a => {
+                const age = Date.now() - a.date.getTime();
+                const isRecent = age < (72 * 60 * 60 * 1000);
+                return isRecent && !readArticles.includes(a.link);
+            }).length;
+            const badge = document.getElementById('unreadBadge');
+            if (badge) {
+                if (unreadCount > 0) {
+                    badge.textContent = `(${unreadCount})`;
+                    badge.style.display = 'inline';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+
+        function setupScrollObserver() {
+            if (observer) observer.disconnect();
+            observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const link = entry.target.dataset.link;
+                    if (!link || readArticles.includes(link)) return;
+                    const rect = entry.boundingClientRect;
+                    const isLeavingTop = rect.top < 0 && !entry.isIntersecting;
+                    if (isLeavingTop) {
+                        readArticles.push(link);
+                        localStorage.setItem('readArticles', JSON.stringify(readArticles));
+                        entry.target.style.transition = 'opacity 0.3s';
+                        entry.target.style.opacity = '0';
+                        setTimeout(() => {
+                            renderArticles('unread');
+                            updateUnreadBadge();
+                        }, 300);
+                    }
+                });
+            }, { threshold: [0, 1], rootMargin: '0px' });
+            const unreadContainer = document.getElementById('unreadContainer');
+            if (unreadContainer) {
+                unreadContainer.querySelectorAll('.article').forEach(article => observer.observe(article));
+            }
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tab + 'View').classList.add('active');
+            if (tab === 'unread') {
+                if (articles.length > 0) renderArticles('unread');
+                setupScrollObserver();
+            } else if (tab === 'all') {
+                if (articles.length > 0) renderArticles('all');
+                if (observer) observer.disconnect();
+            } else if (tab === 'manage') {
+                renderSubscriptions();
+                if (observer) observer.disconnect();
+                if (WORKER_URL) {
+                    document.getElementById('workerSetup').style.display = 'none';
+                    document.getElementById('workerUrlInput').value = WORKER_URL;
+                }
+            }
+        }
+
+        function renderArticles(view) {
+            const container = view === 'unread' ? document.getElementById('unreadContainer') : document.getElementById('allContainer');
+            if (articles.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No articles found</p></div>';
+                return;
+            }
+            let filteredArticles = articles;
+            const now = Date.now();
+            const last72Hours = 72 * 60 * 60 * 1000;
+            if (view === 'unread') {
+                filteredArticles = articles.filter(a => {
+                    const age = now - a.date.getTime();
+                    return age < last72Hours && !readArticles.includes(a.link);
+                });
+            }
+            if (filteredArticles.length === 0) {
+                container.innerHTML = view === 'unread' ? '<div class="empty-state"><h2>All caught up! 🎉</h2><p>No new articles in the last 72 hours</p></div>' : '<div class="empty-state"><p>No articles found</p></div>';
+                return;
+            }
+            container.innerHTML = filteredArticles.map(article => `
+                <div class="article" data-link="${article.link}" onclick="openArticle('${article.link}')">
+                    ${article.image ? `<img src="${article.image}" class="article-image" alt="${article.title}">` : ''}
+                    <div class="article-content">
+                        <div class="article-title">${article.title}</div>
+                        <div class="article-meta">
+                            <span class="feed-source">${article.source}</span>
+                            <span>${formatDate(article.date)}</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="popular-feed-item">
-                    <span>Nintendo Life</span>
-                    <button class="add-quick-btn" onclick="quickAdd('http://www.nintendolife.com/feeds/latest', 'Nintendo Life')">Add</button>
-                </div>
-                <div class="popular-feed-item">
-                    <span>Polygon</span>
-                    <button class="add-quick-btn" onclick="quickAdd('https://www.polygon.com/rss/index.xml', 'Polygon')">Add</button>
-                </div>
-                <div class="popular-feed-item">
-                    <span>Rock Paper Shotgun</span>
-                    <button class="add-quick-btn" onclick="quickAdd('https://www.rockpapershotgun.com/feed/', 'Rock Paper Shotgun')">Add</button>
-                </div>
-                <div class="popular-feed-item">
-                    <span>VG247</span>
-                    <button class="add-quick-btn" onclick="quickAdd('https://www.vg247.com/feed/', 'VG247')">Add</button>
-                </div>
-                <div class="popular-feed-item">
-                    <span>GameSpot</span>
-                    <button class="add-quick-btn" onclick="quickAdd('https://www.gamespot.com/feeds/mashup/', 'GameSpot')">Add</button>
-                </div>
-                <div class="popular-feed-item">
-                    <span>Xbox Wire</span>
-                    <button class="add-quick-btn" onclick="quickAdd('https://news.xbox.com/en-us/feed/', 'Xbox Wire')">Add</button>
-                </div>
-                <div class="popular-feed-item">
-                    <span>Ars Technica Gaming</span>
-                    <button class="add-quick-btn" onclick="quickAdd('http://feeds.arstechnica.com/arstechnica/gaming/', 'Ars Technica Gaming')">Add</button>
-                </div>
-                <div class="popular-feed-item">
-                    <span>Game Informer</span>
-                    <button class="add-quick-btn" onclick="quickAdd('http://www.gameinformer.com/b/mainfeed.aspx?Tags=news', 'Game Informer')">Add</button>
-                </div>
-                <div class="popular-feed-item">
-                    <span>r/Gamers (Reddit)</span>
-                    <button class="add-quick-btn" onclick="quickAdd('https://www.reddit.com/r/gamers/.rss', 'r/Gamers')">Add</button>
-                </div>
-                <div class="popular-feed-item">
-                    <span>Push Square</span>
-                    <button class="add-quick-btn" onclick="quickAdd('http://www.pushsquare.com/feeds/latest', 'Push Square')">Add</button>
-                </div>
-                <div class="popular-feed-item">
-                    <span>My Nintendo News</span>
-                    <button class="add-quick-btn" onclick="quickAdd('https://mynintendonews.com/feed/', 'My Nintendo News')">Add</button>
-                </div>
-                <div class="popular-feed-item">
-                    <span>TouchArcade</span>
-                    <button class="add-quick-btn" onclick="quickAdd('https://toucharcade.com/feed/', 'TouchArcade')">Add</button>
-                </div>
-                <div class="popular-feed-item">
-                    <span>VideoGamer</span>
-                    <button class="add-quick-btn" onclick="quickAdd('https://www.videogamer.com/rss/allupdates.xml', 'VideoGamer')">Add</button>
-                </div>
-                <div class="popular-feed-item">
-                    <span>PCGamesN</span>
-                    <button class="add-quick-btn" onclick="quickAdd('https://www.pcgamesn.com/feed', 'PCGamesN')">Add</button>
-                </div>
-                <div class="popular-feed-item">
-                    <span>Operation Sports</span>
-                    <button class="add-quick-btn" onclick="quickAdd('https://www.operationsports.com/feed/', 'Operation Sports')">Add</button>
-                </div>
-                <div class="popular-feed-item">
-                    <span>Indie Games Plus</span>
-                    <button class="add-quick-btn" onclick="quickAdd('http://indiegamesplus.com/feed',
+            `).join('');
+            if (view === 'unread') setTimeout(() => setupScrollObserver(), 100);
+        }
+
+        function openArticle(link) {
+            const article = articleData[link];
+            if (!article) return;
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `<h1>${article.title}</h1><div class="modal-meta">${article.source} • ${formatDate(article.date)}</div><div class="content-warning">📄 Extracting full article content...</div><div class="loading-article">Please wait...</div>`;
+            document.getElementById('articleModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+            extractArticle(article);
+        }
+
+        async function extractArticle(article) {
+            const modalBody = document.getElementById('modalBody');
+            try {
+                const response = await fetch(`${WORKER_URL}?url=${encodeURIComponent(article.link)}`);
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const reader = new Readability(doc);
+                const extractedArticle = reader.parse();
+                if (extractedArticle && extractedArticle.content) {
+                    modalBody.innerHTML = `<h1>${extractedArticle.title || article.title}</h1><div class="modal-meta">${article.source} • ${formatDate(article.date)}</div><div class="content-warning">✓ Full article extracted successfully</div><div>${extractedArticle.content}</div><a href="${article.link}" target="_blank" class="open-original">Read on ${article.source}</a>`;
+                } else {
+                    throw new Error('Could not extract article');
+                }
+            } catch (error) {
+                modalBody.innerHTML = `<h1>${article.title}</h1><div class="modal-meta">${article.source} • ${formatDate(article.date)}</div><div class="extraction-failed">⚠️ Could not extract full article</div><div>${article.content}</div><a href="${article.link}" target="_blank" class="open-original">Read Full Article on ${article.source}</a>`;
+            }
+        }
+
+        function closeArticle() {
+            document.getElementById('articleModal').classList.remove('show');
+            document.body.style.overflow = 'auto';
+        }
+
+        function saveWorkerUrl() {
+            const url = document.getElementById('workerUrlInput').value.trim();
+            if (!url) { showError('Please enter a worker URL'); return; }
+            WORKER_URL = url;
+            localStorage.setItem('workerUrl', url);
+            document.getElementById('workerSetup').style.display = 'none';
+            showError('✓ Worker URL saved! Loading feeds...', '#27ae60');
+            currentTab = 'unread';
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelector('.tab').classList.add('active');
+            document.getElementById('unreadView').classList.add('active');
+            loadAllFeeds();
+        }
+
+        function quickAdd(url, name) {
+            if (!feeds.find(f => f.url === url)) {
+                feeds.push({ url, name });
+                localStorage.setItem('rssFeeds', JSON.stringify(feeds));
+                renderSubscriptions();
+                showError('✓ Added ' + name, '#27ae60');
+            } else {
+                showError('Already subscribed to ' + name, '#f39c12');
+            }
+        }
+
+        function addFeed() {
+            const url = document.getElementById('feedUrl').value.trim();
+            if (!url) { showError('Please enter a feed URL'); return; }
+            if (feeds.find(f => f.url === url)) { showError('Already subscribed'); return; }
+            feeds.push({ url, name: url });
+            localStorage.setItem('rssFeeds', JSON.stringify(feeds));
+            document.getElementById('feedUrl').value = '';
+            renderSubscriptions();
+            showError('✓ Feed added!', '#27ae60');
+        }
+
+        function removeFeed(index) {
+            if (confirm('Remove this feed?')) {
+                feeds.splice(index, 1);
+                localStorage.setItem('rssFeeds', JSON.stringify(feeds));
+                renderSubscriptions();
+                loadAllFeeds();
+            }
+        }
+
+        function renderSubscriptions() {
+            const list = document.getElementById('subscriptionList');
+            if (feeds.length === 0) {
+                list.innerHTML = '<div class="empty-state"><p>No subscriptions yet</p></div>';
+                return;
+            }
+            list.innerHTML = feeds.map((feed, i) => `<div class="subscription-item"><span class="subscription-name">${feed.name}</span><button class="remove-btn" onclick="removeFeed(${i})">Remove</button></div>`).join('');
+        }
+
+        async function loadAllFeeds() {
+            const unreadContainer = document.getElementById('unreadContainer');
+            const allContainer = document.getElementById('allContainer');
+            if (!WORKER_URL) {
+                if (unreadContainer) unreadContainer.innerHTML = '<div class="empty-state"><h2>Setup Required</h2><p>Go to Manage tab</p></div>';
+                return;
+            }
+            if (feeds.length === 0) {
+                if (unreadContainer) unreadContainer.innerHTML = '<div class="empty-state"><h2>No feeds yet!</h2><p>Go to Manage tab</p></div>';
+                return;
+            }
+            if (unreadContainer) unreadContainer.innerHTML = '<div class="loading">Loading...</div>';
+            if (allContainer) allContainer.innerHTML = '<div class="loading">Loading...</div>';
+            articles = [];
+            for (const feed of feeds) {
+                try {
+                    const response = await fetch(`${WORKER_URL}?url=${encodeURIComponent(feed.url)}`);
+                    if (!response.ok) continue;
+                    const text = await response.text();
+                    const parser = new DOMParser();
+                    const xml = parser.parseFromString(text, 'text/xml');
+                    xml.querySelectorAll('item, entry').forEach(item => {
+                        const title = item.querySelector('title')?.textContent || 'No title';
+                        const link = item.querySelector('link')?.textContent || item.querySelector('link')?.getAttribute('href') || '#';
+                        const pubDate = item.querySelector('pubDate, published')?.textContent || '';
+                        let image = '';
+                        const mediaContent = item.querySelector('[url]');
+                        if (mediaContent && mediaContent.getAttribute('url')) image = mediaContent.getAttribute('url');
+                        if (!image) {
+                            const enclosure = item.querySelector('enclosure[type^="image"]');
+                            if (enclosure) image = enclosure.getAttribute('url');
+                        }
+                        if (!image) {
+                            const description = item.querySelector('description, summary, content, content\\:encoded')?.textContent || '';
+                            const imgMatches = description.matchAll(/<img[^>]+src=["']([^"']+)["']/g);
+                            const imageUrls = Array.from(imgMatches).map(match => match[1]);
+                            const validImages = imageUrls.filter(url => {
+                                const lower = url.toLowerCase();
+                                return !lower.includes('1x1') && !lower.includes('tracking') && !lower.includes('pixel') && !lower.includes('icon') && !lower.includes('logo') && !lower.includes('sprite');
+                            });
+                            if (validImages.length > 0) image = validImages[0];
+                        }
+                        const contentEncoded = item.querySelector('content\\:encoded, content')?.textContent || '';
+                        const description = item.querySelector('description, summary')?.textContent || '';
+                        const content = contentEncoded || description;
+                        articles.push({ title, link, image, source: feed.name, date: new Date(pubDate || Date.now()) });
+                        articleData[link] = { title, link, content, source: feed.name, date: new Date(pubDate || Date.now()) };
+                    });
+                } catch (e) {
+                    console.error('Error loading feed:', feed.url, e);
+                }
+            }
+            articles.sort((a, b) => b.date - a.date);
+            renderArticles('unread');
+            renderArticles('all');
+            updateUnreadBadge();
+        }
+
+        if (feeds.length === 0) {
+            feeds = [
+                { url: 'https://kotaku.com/rss', name: 'Kotaku' },
+                { url: 'https://www.polygon.com/rss/index.xml', name: 'Polygon' },
+                { url: 'https://www.rockpapershotgun.com/feed/', name: 'Rock Paper Shotgun' },
+                { url: 'http://feeds.ign.com/ign/all', name: 'IGN All' }
+            ];
+            localStorage.setItem('rssFeeds', JSON.stringify(feeds));
+        }
+        if (WORKER_URL) {
+            document.getElementById('workerSetup').style.display = 'none';
+            loadAllFeeds();
+        }
+        document.getElementById('workerUrlInput').value = WORKER_URL;
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
+    </script>
+</body>
+</html>
