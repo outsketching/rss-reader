@@ -217,10 +217,12 @@
             const now = Date.now();
             const last72Hours = 72 * 60 * 60 * 1000;
             if (view === 'unread') {
-                // Show all articles from last 72 hours, both read and unread
+                // Show only unread articles from last 72 hours
                 filteredArticles = articles.filter(a => {
                     const age = now - a.date.getTime();
-                    return age < last72Hours;
+                    const isRecent = age < last72Hours;
+                    const isUnread = !readArticles.includes(a.link);
+                    return isRecent && isUnread;
                 });
             }
             if (filteredArticles.length === 0) {
