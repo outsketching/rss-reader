@@ -22,6 +22,7 @@
         .feed-container { padding: 15px; }
         .article { background: white; border-radius: 8px; margin-bottom: 15px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s, opacity 0.3s; }
         .article:active { transform: scale(0.98); }
+        .article.read { opacity: 0.4; }
         .article-image { width: 100%; height: 200px; object-fit: cover; background: #e0e0e0; }
         .article-content { padding: 15px; }
         .article-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #2c3e50; line-height: 1.4; }
@@ -173,12 +174,8 @@
                     if (isLeavingTop) {
                         readArticles.push(link);
                         localStorage.setItem('readArticles', JSON.stringify(readArticles));
-                        entry.target.style.transition = 'opacity 0.3s';
-                        entry.target.style.opacity = '0';
-                        setTimeout(() => {
-                            renderArticles('unread');
-                            updateUnreadBadge();
-                        }, 300);
+                        entry.target.classList.add('read');
+                        updateUnreadBadge();
                     }
                 });
             }, { threshold: [0, 1], rootMargin: '0px' });
@@ -220,17 +217,20 @@
             const now = Date.now();
             const last72Hours = 72 * 60 * 60 * 1000;
             if (view === 'unread') {
+                // Show all articles from last 72 hours, both read and unread
                 filteredArticles = articles.filter(a => {
                     const age = now - a.date.getTime();
-                    return age < last72Hours && !readArticles.includes(a.link);
+                    return age < last72Hours;
                 });
             }
             if (filteredArticles.length === 0) {
                 container.innerHTML = view === 'unread' ? '<div class="empty-state"><h2>All caught up! 🎉</h2><p>No new articles in the last 72 hours</p></div>' : '<div class="empty-state"><p>No articles found</p></div>';
                 return;
             }
-            container.innerHTML = filteredArticles.map(article => `
-                <div class="article" data-link="${article.link}" onclick="openArticle('${article.link}')">
+            container.innerHTML = filteredArticles.map(article => {
+                const isRead = readArticles.includes(article.link);
+                return `
+                <div class="article ${isRead ? 'read' : ''}" data-link="${article.link}" onclick="openArticle('${article.link}')">
                     ${article.image ? `<img src="${article.image}" class="article-image" alt="${article.title}">` : ''}
                     <div class="article-content">
                         <div class="article-title">${article.title}</div>
@@ -240,7 +240,7 @@
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
             if (view === 'unread') setTimeout(() => setupScrollObserver(), 100);
         }
 
