@@ -169,16 +169,19 @@
                 entries.forEach(entry => {
                     const link = entry.target.dataset.link;
                     if (!link || readArticles.includes(link)) return;
-                    const rect = entry.boundingClientRect;
-                    const isLeavingTop = rect.top < 0 && !entry.isIntersecting;
-                    if (isLeavingTop) {
+                    
+                    // Mark as read when article is fully visible (has been scrolled into view)
+                    if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
                         readArticles.push(link);
                         localStorage.setItem('readArticles', JSON.stringify(readArticles));
                         entry.target.classList.add('read');
                         updateUnreadBadge();
                     }
                 });
-            }, { threshold: [0, 1], rootMargin: '0px' });
+            }, { 
+                threshold: [0.5], // Trigger when 50% visible
+                rootMargin: '0px' 
+            });
             const unreadContainer = document.getElementById('unreadContainer');
             if (unreadContainer) {
                 unreadContainer.querySelectorAll('.article').forEach(article => observer.observe(article));
