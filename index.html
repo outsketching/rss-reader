@@ -60,6 +60,8 @@
         .content-warning { background: #3498db; color: white; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 14px; text-align: center; }
         .loading-article { text-align: center; padding: 40px; color: #7f8c8d; }
         .extraction-failed { background: #e74c3c; color: white; padding: 15px; border-radius: 5px; margin: 20px 0; text-align: center; }
+        .bottom-spacer { text-align: center; padding: 200px 20px; opacity: 0.3; }
+        .bottom-spacer img { width: 120px; height: 120px; }
     </style>
 </head>
 <body>
@@ -169,19 +171,16 @@
                 entries.forEach(entry => {
                     const link = entry.target.dataset.link;
                     if (!link || readArticles.includes(link)) return;
-                    
-                    // Mark as read when article is fully visible (has been scrolled into view)
-                    if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+                    const rect = entry.boundingClientRect;
+                    const isLeavingTop = rect.top < 0 && !entry.isIntersecting;
+                    if (isLeavingTop) {
                         readArticles.push(link);
                         localStorage.setItem('readArticles', JSON.stringify(readArticles));
                         entry.target.classList.add('read');
                         updateUnreadBadge();
                     }
                 });
-            }, { 
-                threshold: [0.5], // Trigger when 50% visible
-                rootMargin: '0px' 
-            });
+            }, { threshold: [0, 1], rootMargin: '0px' });
             const unreadContainer = document.getElementById('unreadContainer');
             if (unreadContainer) {
                 unreadContainer.querySelectorAll('.article').forEach(article => observer.observe(article));
@@ -245,7 +244,7 @@
                         </div>
                     </div>
                 </div>
-            `}).join('');
+            `}).join('') + (view === 'unread' ? '<div class="bottom-spacer"><img src="icon-512.png" alt=""></div>' : '');
             if (view === 'unread') setTimeout(() => setupScrollObserver(), 100);
         }
 
