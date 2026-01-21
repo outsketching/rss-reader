@@ -67,6 +67,7 @@
             cursor: pointer;
             transition: all 0.2s;
             border: 1px solid #e0e0e0;
+            position: relative;
         }
         .article:hover { 
             transform: translateY(-2px);
@@ -76,6 +77,25 @@
         .article:active { transform: scale(0.98); }
         .article.read { 
             opacity: 0.5;
+        }
+        .article.saving {
+            animation: pulse 0.3s ease-in-out;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(0.95); }
+        }
+        .saved-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #00b8d4;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            z-index: 10;
         }
         .article-image { 
             width: 100%;
@@ -378,6 +398,7 @@
         <h1>📰 RSS Reader</h1>
         <div class="tabs">
             <button class="tab active" onclick="switchTab('unread')">New <span id="unreadBadge"></span></button>
+            <button class="tab" onclick="switchTab('readlater')">Read Later <span id="readLaterBadge"></span></button>
             <button class="tab" onclick="switchTab('all')">All</button>
             <button class="tab" onclick="switchTab('manage')">Manage</button>
         </div>
@@ -389,6 +410,10 @@
 
     <div id="allView" class="view">
         <div class="feed-container" id="allContainer"><div class="loading">Loading articles...</div></div>
+    </div>
+
+    <div id="readlaterView" class="view">
+        <div class="feed-container" id="readLaterContainer"><div class="empty-state"><h2>No saved articles</h2><p>Long press any article to save it for later</p></div></div>
     </div>
 
     <div id="manageView" class="view">
@@ -431,9 +456,12 @@
         let feeds = JSON.parse(localStorage.getItem('rssFeeds') || '[]');
         let articles = [];
         let readArticles = JSON.parse(localStorage.getItem('readArticles') || '[]');
+        let readLaterArticles = JSON.parse(localStorage.getItem('readLaterArticles') || '[]');
         let currentTab = 'unread';
         let articleData = {};
         let observer = null;
+        let longPressTimer = null;
+        let longPressArticle = null;
 
         function formatDate(date) {
             if (!date || isNaN(date)) return '';
@@ -472,6 +500,17 @@
                     badge.style.display = 'none';
                 }
             }
+            
+            const readLaterCount = readLaterArticles.length;
+            const readLaterBadge = document.getElementById('readLaterBadge');
+            if (readLaterBadge) {
+                if (readLaterCount > 0) {
+                    readLaterBadge.textContent = `(${readLaterCount})`;
+                    readLaterBadge.style.display = 'inline';
+                } else {
+                    readLaterBadge.style.display = 'none';
+                }
+            }
         }
 
         function setupScrollObserver() {
@@ -508,6 +547,9 @@
             } else if (tab === 'all') {
                 if (articles.length > 0) renderArticles('all');
                 if (observer) observer.disconnect();
+            } else if (tab === 'readlater') {
+                renderReadLater();
+                if (observer) observer.disconnect();
             } else if (tab === 'manage') {
                 renderSubscriptions();
                 if (observer) observer.disconnect();
@@ -515,6 +557,66 @@
                     document.getElementById('workerSetup').style.display = 'none';
                     document.getElementById('workerUrlInput').value = WORKER_URL;
                 }
+            }
+        }
+
+        function addToReadLater(link) {
+            if (!readLaterArticles.includes(link)) {
+                readLaterArticles.push(link);
+                localStorage.setItem('readLaterArticles', JSON.stringify(readLaterArticles));
+                updateUnreadBadge();
+                showError('✓ Saved to Read Later', '#00b8d4');
+                
+                // Re-render current view to show saved badge
+                if (currentTab === 'unread') renderArticles('unread');
+                else if (currentTab === 'all') renderArticles('all');
+            }
+        }
+
+        function removeFromReadLater(link) {
+            readLaterArticles = readLaterArticles.filter(l => l !== link);
+            localStorage.setItem('readLaterArticles', JSON.stringify(readLaterArticles));
+            updateUnreadBadge();
+            renderReadLater();
+        }
+
+        function renderReadLater() {
+            const container = document.getElementById('readLaterContainer');
+            const savedArticles = articles.filter(a => readLaterArticles.includes(a.link));
+            
+            if (savedArticles.length === 0) {
+                container.innerHTML = '<div class="empty-state"><h2>No saved articles</h2><p>Long press any article to save it for later</p></div>';
+                return;
+            }
+
+            container.innerHTML = savedArticles.map(article => `
+                <div class="article" data-link="${article.link}" onclick="openArticle('${article.link}')">
+                    ${article.image ? `<img src="${article.image}" class="article-image" alt="${article.title}">` : ''}
+                    <div class="article-content">
+                        <div class="article-title">${article.title}</div>
+                        <div class="article-meta">
+                            <span class="feed-source">${article.source}</span>
+                            <span>${formatDate(article.date)}</span>
+                        </div>
+                    </div>
+                    <button class="remove-btn" style="position: absolute; bottom: 15px; right: 15px;" onclick="event.stopPropagation(); removeFromReadLater('${article.link}')">Remove</button>
+                </div>
+            `).join('');
+        }
+
+        function handleLongPressStart(link, element) {
+            longPressArticle = link;
+            longPressTimer = setTimeout(() => {
+                element.classList.add('saving');
+                addToReadLater(link);
+                setTimeout(() => element.classList.remove('saving'), 300);
+            }, 500); // 500ms long press
+        }
+
+        function handleLongPressEnd() {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
             }
         }
 
@@ -542,8 +644,18 @@
             }
             container.innerHTML = filteredArticles.map(article => {
                 const isRead = readArticles.includes(article.link);
+                const isSaved = readLaterArticles.includes(article.link);
                 return `
-                <div class="article ${isRead ? 'read' : ''}" data-link="${article.link}" onclick="openArticle('${article.link}')">
+                <div class="article ${isRead ? 'read' : ''}" 
+                     data-link="${article.link}" 
+                     onclick="openArticle('${article.link}')"
+                     onmousedown="handleLongPressStart('${article.link}', this)"
+                     onmouseup="handleLongPressEnd()"
+                     onmouseleave="handleLongPressEnd()"
+                     ontouchstart="handleLongPressStart('${article.link}', this)"
+                     ontouchend="handleLongPressEnd()"
+                     ontouchcancel="handleLongPressEnd()">
+                    ${isSaved ? '<div class="saved-badge">📌 Saved</div>' : ''}
                     ${article.image ? `<img src="${article.image}" class="article-image" alt="${article.title}">` : ''}
                     <div class="article-content">
                         <div class="article-title">${article.title}</div>
