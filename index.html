@@ -462,6 +462,8 @@
         let observer = null;
         let longPressTimer = null;
         let longPressArticle = null;
+        let isScrolling = false;
+        let scrollTimeout = null;
 
         function formatDate(date) {
             if (!date || isNaN(date)) return '';
@@ -605,12 +607,18 @@
         }
 
         function handleLongPressStart(link, element) {
+            // Don't start long press if user is scrolling
+            if (isScrolling) return;
+            
             longPressArticle = link;
             longPressTimer = setTimeout(() => {
-                element.classList.add('saving');
-                addToReadLater(link);
-                setTimeout(() => element.classList.remove('saving'), 300);
-            }, 500); // 500ms long press
+                // Double-check user isn't scrolling when timer completes
+                if (!isScrolling) {
+                    element.classList.add('saving');
+                    addToReadLater(link);
+                    setTimeout(() => element.classList.remove('saving'), 300);
+                }
+            }, 700); // Increased to 700ms for better UX
         }
 
         function handleLongPressEnd() {
@@ -619,6 +627,22 @@
                 longPressTimer = null;
             }
         }
+
+        // Detect when user is scrolling
+        window.addEventListener('scroll', () => {
+            isScrolling = true;
+            
+            // Clear any existing timeout
+            if (scrollTimeout) clearTimeout(scrollTimeout);
+            
+            // Cancel any active long press
+            handleLongPressEnd();
+            
+            // Mark as not scrolling after 150ms of no scroll activity
+            scrollTimeout = setTimeout(() => {
+                isScrolling = false;
+            }, 150);
+        }, true); // Use capture phase to catch all scroll events
 
         function renderArticles(view) {
             const container = view === 'unread' ? document.getElementById('unreadContainer') : document.getElementById('allContainer');
